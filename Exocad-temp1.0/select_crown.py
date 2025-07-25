@@ -122,6 +122,7 @@ def main():
                 if file not in existing_contents_false:
                     with open(file_false_path, 'a') as fi:
                         fi.write(file + '\n')
+                continue
 
             else:
                 time.sleep(1)
@@ -694,23 +695,25 @@ def detect_in_region_and_exit():
     # 截取区域截图并 OCR
     img = np.array(pyautogui.screenshot(region=(x0, y0, width, height)))
     results = reader.readtext(img)
+    
+    texts = [text for _, text, _ in results]
 
     # 遍历 OCR 结果，检查关键词
-    for bbox, text, conf in results:
-        for kw in EXIT_KEYWORDS:
-            if kw in text:
-                print(f"检测到关键词 '{kw}'，执行退出操作。")
-                perform_original_exit()
-                return False
+    for kw in EXIT_KEYWORDS:
+        if any(kw in t for t in texts):
+            print(f"检测到关键词 '{kw}'，执行退出操作。")
+            perform_original_exit()
+            return False
             
-        for kw_1 in other_exit_keywords:
-            if kw_1 not in text:
-                print(f"未检测到关键词{kw_1},执行退出操作。")
-                perform_original_exit()
-                return False
+    for kw_1 in other_exit_keywords:
+        if not any(kw_1 in t for t in texts):
+            print(f"未检测到关键词{kw_1},执行退出操作。")
+            perform_original_exit()
+            return False
 
     # 继续执行
-    print("继续后面流程")
+    print("左上角识别完成，继续后面流程")
+    return True
 
 
 
