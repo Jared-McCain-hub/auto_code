@@ -4,6 +4,7 @@ import subprocess
 import time
 import cv2
 import pyautogui
+import sys
 
 import pyperclip
 import numpy as np
@@ -122,201 +123,88 @@ def main():
                 if file not in existing_contents_false:
                     with open(file_false_path, 'a') as fi:
                         fi.write(file + '\n')
-                continue
+                
+                # 保存false截图
+                # os.remove(pngnamelow)
+                # pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
+                # lowtoothmesh_path.save(pngfalselow)
+                # result_exocad = False
+                # continue
 
             else:
-                time.sleep(1)
-                pyautogui.click(1535, 855)
-                time.sleep(1)
-
-                region = (0, 0, 1000, 1000)
-                save_img = pyautogui.screenshot(region=region)
-                img_array = np.array(save_img)
-
-                result = reader.readtext(img_array)
-                for detection in result:
-                    text = detection[1]
-                    if "全部" in text:
-                        corrdinates = detection[0]
-                        save_x = int((corrdinates[0][0] + corrdinates[2][0]) / 2)
-                        save_y = int((corrdinates[0][1] + corrdinates[2][1]) / 2)
-                        # 隐藏所有对象
-                        pyautogui.keyDown("ctrl")
-                        pyautogui.click(x=save_x, y=save_y)
-                        pyautogui.keyUp("ctrl")
-                        time.sleep(1)
-                        break
-
-                pyautogui.click(272, 705)
-                time.sleep(1)
-                pyautogui.hotkey("a")  # 对颌
-                print(1111111111111111)
-                time.sleep(1)
-                pyautogui.hotkey("s")  # 工作模型扫描
-                print(2222222222222222)
-                time.sleep(2)
-                pyautogui.hotkey("m")
-                print(3333333333333333)
-                time.sleep(2)
-                pyautogui.hotkey("e")
-                print(4444444444444444)
-
-
-                time.sleep(2)
-                print(555555555555555555555)
-                pyautogui.click(x=2500,y=1363,clicks=1,button='left')
-                time.sleep(2)
-
-                #   下颌牙冠
-                # time.sleep(4)
-                pyautogui.click(2500,1325)    #下颌视角
-                time.sleep(3)
-                lowtoothmesh_path = pyautogui.screenshot()
-                pngnamelow = os.path.join(iamges_true_path, file + "-LowerJaw.png")
-                print(pngnamelow)
-                lowtoothmesh_path.save(pngnamelow)
-
-                time.sleep(1)
-                region_low = (350, 100, 1750, 1200)
-
-                # 获取牙冠并保存
-                result = identify_exist_crown(pngnamelow)            # 判断是黄色还是灰色，看牙颌中是否存在冠
-                boxes = detector.process(lowtoothmesh_path)
-                print(boxes)
-                if result == True and len(boxes)>0:
-                    print("下颌box",boxes)
-                    get_box_point(boxes)
-
-                    # 保存下颌mesh
-                    time.sleep(3)
-                    result = click_toothmesh_with_box(pngnamelow)
-                    if result == False:
-                        os.remove(pngnamelow)
-                        pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
-                        lowtoothmesh_path.save(pngfalselow)
-                        result_exocad = False
-
-                        time.sleep(1)
-                        subprocess.call("TASKKILL /IM DentalDB.exe")
-                        subprocess.call("TASKKILL /IM DentalCADApp.exe")
-                        time.sleep(1)
-                        check_close_windows()
-                        time.sleep(1)
-                        if result_exocad == False:
-                            with open(file_false_path, 'r', encoding='utf-8') as fi:
-                                existing_contents_false = fi.read().splitlines()
-                            if file not in existing_contents_false:
-                                with open(file_false_path, 'a') as fi:
-                                    fi.write(file + '\n')
-                        elif result_exocad == True:
-                            with open(file_true_path, 'r', encoding='utf-8') as f:
-                                existing_contents_true = f.read().splitlines()
-                            if file not in existing_contents_true:
-                                with open(file_true_path, 'a') as f:
-                                    f.write(file + '\n')
-                        continue
-
+                if detect_bridge_type() == "bridge":
+                    # 牙桥
+                    continue
                 else:
-                    result = click_toothmesh(region_low)
-                    if result == False:
-                        os.remove(pngnamelow)
-                        pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
-                        lowtoothmesh_path.save(pngfalselow)
-                        result_exocad = False
-
-                        time.sleep(1)
-                        subprocess.call("TASKKILL /IM DentalDB.exe")
-                        subprocess.call("TASKKILL /IM DentalCADApp.exe")
-                        time.sleep(1)
-                        check_close_windows()
-                        time.sleep(1)
-                        if result_exocad == False:
-                            with open(file_false_path, 'r', encoding='utf-8') as fi:
-                                existing_contents_false = fi.read().splitlines()
-                            if file not in existing_contents_false:
-                                with open(file_false_path, 'a') as fi:
-                                    fi.write(file + '\n')
-                        elif result_exocad == True:
-                            with open(file_true_path, 'r', encoding='utf-8') as f:
-                                existing_contents_true = f.read().splitlines()
-                            if file not in existing_contents_true:
-                                with open(file_true_path, 'a') as f:
-                                    f.write(file + '\n')
-
-                        continue
-
-
-                # 检查保存窗口是否弹出
-                time.sleep(5)
-                wait_result, point = wait_for_condition()
-                if not wait_result:
-                    result_exocad = False
-                    subprocess.call("TASKKILL /IM DentalCADApp.exe")
                     time.sleep(1)
-                    check_close_windows()
-                    if result_exocad == False:
-                        with open(file_false_path, 'r', encoding='utf-8') as fi:
-                            existing_contents_false = fi.read().splitlines()
-                        if file not in existing_contents_false:
-                            with open(file_false_path, 'a') as fi:
-                                fi.write(file + '\n')
-                    elif result_exocad == True:
-                        with open(file_true_path, 'r', encoding='utf-8') as f:
-                            existing_contents_true = f.read().splitlines()
-                        if file not in existing_contents_true:
-                            with open(file_true_path, 'a') as f:
-                                f.write(file + '\n')
-                else:
-                    pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left')  # 保存文件
-                    pyautogui.hotkey("ctrl", "a")
-                    pyautogui.hotkey("backspace")
+                    pyautogui.click(1535, 855)
                     time.sleep(1)
-                    lowerpath = os.path.join(source_dir, file, file + "-LowerJaw.stl")
-                    pyperclip.copy(lowerpath)
-                    print(lowerpath)
+
+                    region = (0, 0, 1000, 1000)
+                    save_img = pyautogui.screenshot(region=region)
+                    img_array = np.array(save_img)
+
+                    result = reader.readtext(img_array)
+                    for detection in result:
+                        text = detection[1]
+                        if "全部" in text:
+                            corrdinates = detection[0]
+                            save_x = int((corrdinates[0][0] + corrdinates[2][0]) / 2)
+                            save_y = int((corrdinates[0][1] + corrdinates[2][1]) / 2)
+                            # 隐藏所有对象
+                            pyautogui.keyDown("ctrl")
+                            pyautogui.click(x=save_x, y=save_y)
+                            pyautogui.keyUp("ctrl")
+                            time.sleep(1)
+                            break
+
+                    pyautogui.click(272, 705)
                     time.sleep(1)
-                    pyautogui.hotkey("ctrl", "v")
+                    pyautogui.hotkey("a")  # 对颌
+                    print(1111111111111111)
                     time.sleep(1)
-                    # pyautogui.click(x=1030,y=680,clicks=1,button='left')  # 保存文件
-                    pyautogui.click(x=point[0], y=point[1], clicks=1, button='left')  # 保存文件
+                    pyautogui.hotkey("s")  # 工作模型扫描
+                    print(2222222222222222)
                     time.sleep(2)
-                    pyautogui.hotkey("y")  # 是否替换已存在的数据
-                    time.sleep(1)
-                    pyautogui.click(x=1237, y=680, clicks=1,button='left')
-                    time.sleep(1)
-                    pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left')  # 避免窗口还存在,点击取消
-                    time.sleep(1)
-                    result_exocad = True
-
-                    time.sleep(1)
+                    pyautogui.hotkey("m")
+                    print(3333333333333333)
+                    time.sleep(2)
+                    pyautogui.hotkey("e")
+                    print(4444444444444444)
 
 
+                    time.sleep(2)
+                    print(555555555555555555555)
+                    pyautogui.click(x=2500,y=1363,clicks=1,button='left')
+                    time.sleep(2)
 
-                    #上颌牙冠
-                    pyautogui.click(2500, 1395)  # 上颌视角
-
+                    #   下颌牙冠
+                    # time.sleep(4)
+                    pyautogui.click(2500,1325)    #下颌视角
                     time.sleep(3)
-                    upptoothmesh_path = pyautogui.screenshot()
-                    pngnameupp = os.path.join(iamges_true_path, file + "UpperJaw.png")
-                    upptoothmesh_path.save(pngnameupp)
-                    region_upp = (350, 100, 1750, 1200)
+                    lowtoothmesh_path = pyautogui.screenshot()
+                    pngnamelow = os.path.join(iamges_true_path, file + "-LowerJaw.png")
+                    print(pngnamelow)
+                    lowtoothmesh_path.save(pngnamelow)
 
                     time.sleep(1)
-                    # 获取牙冠并保存
-                    result1 = identify_exist_crown(pngnameupp)  # 判断是黄色还是灰色，看牙颌中是否存在冠
-                    boxes1 = detector.process(upptoothmesh_path)
-                    print(boxes1)
-                    if result1 == True and len(boxes1) > 0:
-                        print("上颌box", boxes1)
-                        get_box_point(boxes1)
+                    region_low = (350, 100, 1750, 1200)
 
-                        # 保存上颌mesh
+                    # 获取牙冠并保存
+                    result = identify_exist_crown(pngnamelow)            # 判断是黄色还是灰色，看牙颌中是否存在冠
+                    boxes = detector.process(lowtoothmesh_path)
+                    print(boxes)
+                    if result == True and len(boxes)>0:
+                        print("下颌box",boxes)
+                        get_box_point(boxes)
+
+                        # 保存下颌mesh
                         time.sleep(3)
-                        result = click_toothmesh_with_box(pngnameupp)
+                        result = click_toothmesh_with_box(pngnamelow)
                         if result == False:
-                            os.remove(pngnameupp)
-                            pngfalseupp = os.path.join(iamges_false_path, file + "-UpperJaw.png")
-                            upptoothmesh_path.save(pngfalseupp)
+                            os.remove(pngnamelow)
+                            pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
+                            lowtoothmesh_path.save(pngfalselow)
                             result_exocad = False
 
                             time.sleep(1)
@@ -338,19 +226,13 @@ def main():
                                     with open(file_true_path, 'a') as f:
                                         f.write(file + '\n')
                             continue
-                        # else:
-                        #     de_filePath = os.path.join(file_true_path, file)
-                        #     if os.path.exists(de_filePath):
-                        #         shutil.rmtree(de_filePath)
-                        #     shutil.copytree(filePath, de_filePath)
-
 
                     else:
-                        result = click_toothmesh(region_upp)
+                        result = click_toothmesh(region_low)
                         if result == False:
-                            os.remove(pngnameupp)
-                            pngfalseupp = os.path.join(iamges_false_path, file + "-UpperJaw.png")
-                            upptoothmesh_path.save(pngfalseupp)
+                            os.remove(pngnamelow)
+                            pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
+                            lowtoothmesh_path.save(pngfalselow)
                             result_exocad = False
 
                             time.sleep(1)
@@ -358,7 +240,6 @@ def main():
                             subprocess.call("TASKKILL /IM DentalCADApp.exe")
                             time.sleep(1)
                             check_close_windows()
-
                             time.sleep(1)
                             if result_exocad == False:
                                 with open(file_false_path, 'r', encoding='utf-8') as fi:
@@ -374,16 +255,13 @@ def main():
                                         f.write(file + '\n')
 
                             continue
-                        # else:
-                        #     de_filePath = os.path.join(file_true_path, file)
-                        #     if os.path.exists(de_filePath):
-                        #         shutil.rmtree(de_filePath)
-                        #     shutil.copytree(filePath, de_filePath)
+
+
+                    # 检查保存窗口是否弹出
                     time.sleep(5)
-                    wait_result1, point1 = wait_for_condition()
-                    if not wait_result1:
+                    wait_result, point = wait_for_condition()
+                    if not wait_result:
                         result_exocad = False
-                        subprocess.call("TASKKILL /IM DentalDB.exe")
                         subprocess.call("TASKKILL /IM DentalCADApp.exe")
                         time.sleep(1)
                         check_close_windows()
@@ -400,46 +278,179 @@ def main():
                                 with open(file_true_path, 'a') as f:
                                     f.write(file + '\n')
                     else:
-                        # pyautogui.click(x=253, y=616, clicks=1, button='left')  # 点击文本输入框
-                        pyautogui.click(x=point1[0], y=point1[1]-70, clicks=1, button='left')  # 保存文件
+                        pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left')  # 保存文件
                         pyautogui.hotkey("ctrl", "a")
                         pyautogui.hotkey("backspace")
                         time.sleep(1)
-                        upperpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
-                        pyperclip.copy(upperpath)
-                        print(upperpath)
+                        lowerpath = os.path.join(source_dir, file, file + "-LowerJaw.stl")
+                        pyperclip.copy(lowerpath)
+                        print(lowerpath)
                         time.sleep(1)
                         pyautogui.hotkey("ctrl", "v")
                         time.sleep(1)
-                        # pyautogui.click(x=1030, y=685, clicks=1, button='left')  # 保存文件
-                        pyautogui.click(x=point1[0], y=point1[1], clicks=1, button='left')  # 保存文件
-                        time.sleep(1)
+                        # pyautogui.click(x=1030,y=680,clicks=1,button='left')  # 保存文件
+                        pyautogui.click(x=point[0], y=point[1], clicks=1, button='left')  # 保存文件
+                        time.sleep(2)
                         pyautogui.hotkey("y")  # 是否替换已存在的数据
                         time.sleep(1)
-                        pyautogui.click(1237, 680)
+                        pyautogui.click(x=1237, y=680, clicks=1,button='left')
                         time.sleep(1)
-                        pyautogui.click(x=point1[0] + 80, y=point1[1], clicks=1, button='left')
+                        pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left')  # 避免窗口还存在,点击取消
+                        time.sleep(1)
                         result_exocad = True
 
-                        time.sleep(2)
-                        subprocess.call("TASKKILL /IM DentalDB.exe")
-                        subprocess.call("TASKKILL /IM DentalCADApp.exe")
                         time.sleep(1)
-                        check_close_windows()
 
 
-                        if result_exocad == False:
-                            with open(file_false_path, 'r', encoding='utf-8') as fi:
-                                existing_contents_false = fi.read().splitlines()
-                            if file not in existing_contents_false:
-                                with open(file_false_path, 'a') as fi:
-                                    fi.write(file + '\n')
-                        elif result_exocad == True:
-                            with open(file_true_path, 'r', encoding='utf-8') as f:
-                                existing_contents_true = f.read().splitlines()
-                            if file not in existing_contents_true:
-                                with open(file_true_path, 'a') as f:
-                                    f.write(file + '\n')
+
+                        #上颌牙冠
+                        pyautogui.click(2500, 1395)  # 上颌视角
+
+                        time.sleep(3)
+                        upptoothmesh_path = pyautogui.screenshot()
+                        pngnameupp = os.path.join(iamges_true_path, file + "UpperJaw.png")
+                        upptoothmesh_path.save(pngnameupp)
+                        region_upp = (350, 100, 1750, 1200)
+
+                        time.sleep(1)
+                        # 获取牙冠并保存
+                        result1 = identify_exist_crown(pngnameupp)  # 判断是黄色还是灰色，看牙颌中是否存在冠
+                        boxes1 = detector.process(upptoothmesh_path)
+                        print(boxes1)
+                        if result1 == True and len(boxes1) > 0:
+                            print("上颌box", boxes1)
+                            get_box_point(boxes1)
+
+                            # 保存上颌mesh
+                            time.sleep(3)
+                            result = click_toothmesh_with_box(pngnameupp)
+                            if result == False:
+                                os.remove(pngnameupp)
+                                pngfalseupp = os.path.join(iamges_false_path, file + "-UpperJaw.png")
+                                upptoothmesh_path.save(pngfalseupp)
+                                result_exocad = False
+
+                                time.sleep(1)
+                                subprocess.call("TASKKILL /IM DentalDB.exe")
+                                subprocess.call("TASKKILL /IM DentalCADApp.exe")
+                                time.sleep(1)
+                                check_close_windows()
+                                time.sleep(1)
+                                if result_exocad == False:
+                                    with open(file_false_path, 'r', encoding='utf-8') as fi:
+                                        existing_contents_false = fi.read().splitlines()
+                                    if file not in existing_contents_false:
+                                        with open(file_false_path, 'a') as fi:
+                                            fi.write(file + '\n')
+                                elif result_exocad == True:
+                                    with open(file_true_path, 'r', encoding='utf-8') as f:
+                                        existing_contents_true = f.read().splitlines()
+                                    if file not in existing_contents_true:
+                                        with open(file_true_path, 'a') as f:
+                                            f.write(file + '\n')
+                                continue
+                            # else:
+                            #     de_filePath = os.path.join(file_true_path, file)
+                            #     if os.path.exists(de_filePath):
+                            #         shutil.rmtree(de_filePath)
+                            #     shutil.copytree(filePath, de_filePath)
+
+
+                        else:
+                            result = click_toothmesh(region_upp)
+                            if result == False:
+                                os.remove(pngnameupp)
+                                pngfalseupp = os.path.join(iamges_false_path, file + "-UpperJaw.png")
+                                upptoothmesh_path.save(pngfalseupp)
+                                result_exocad = False
+
+                                time.sleep(1)
+                                subprocess.call("TASKKILL /IM DentalDB.exe")
+                                subprocess.call("TASKKILL /IM DentalCADApp.exe")
+                                time.sleep(1)
+                                check_close_windows()
+
+                                time.sleep(1)
+                                if result_exocad == False:
+                                    with open(file_false_path, 'r', encoding='utf-8') as fi:
+                                        existing_contents_false = fi.read().splitlines()
+                                    if file not in existing_contents_false:
+                                        with open(file_false_path, 'a') as fi:
+                                            fi.write(file + '\n')
+                                elif result_exocad == True:
+                                    with open(file_true_path, 'r', encoding='utf-8') as f:
+                                        existing_contents_true = f.read().splitlines()
+                                    if file not in existing_contents_true:
+                                        with open(file_true_path, 'a') as f:
+                                            f.write(file + '\n')
+
+                                continue
+                            # else:
+                            #     de_filePath = os.path.join(file_true_path, file)
+                            #     if os.path.exists(de_filePath):
+                            #         shutil.rmtree(de_filePath)
+                            #     shutil.copytree(filePath, de_filePath)
+                        time.sleep(5)
+                        wait_result1, point1 = wait_for_condition()
+                        if not wait_result1:
+                            result_exocad = False
+                            subprocess.call("TASKKILL /IM DentalDB.exe")
+                            subprocess.call("TASKKILL /IM DentalCADApp.exe")
+                            time.sleep(1)
+                            check_close_windows()
+                            if result_exocad == False:
+                                with open(file_false_path, 'r', encoding='utf-8') as fi:
+                                    existing_contents_false = fi.read().splitlines()
+                                if file not in existing_contents_false:
+                                    with open(file_false_path, 'a') as fi:
+                                        fi.write(file + '\n')
+                            elif result_exocad == True:
+                                with open(file_true_path, 'r', encoding='utf-8') as f:
+                                    existing_contents_true = f.read().splitlines()
+                                if file not in existing_contents_true:
+                                    with open(file_true_path, 'a') as f:
+                                        f.write(file + '\n')
+                        else:
+                            # pyautogui.click(x=253, y=616, clicks=1, button='left')  # 点击文本输入框
+                            pyautogui.click(x=point1[0], y=point1[1]-70, clicks=1, button='left')  # 保存文件
+                            pyautogui.hotkey("ctrl", "a")
+                            pyautogui.hotkey("backspace")
+                            time.sleep(1)
+                            upperpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
+                            pyperclip.copy(upperpath)
+                            print(upperpath)
+                            time.sleep(1)
+                            pyautogui.hotkey("ctrl", "v")
+                            time.sleep(1)
+                            # pyautogui.click(x=1030, y=685, clicks=1, button='left')  # 保存文件
+                            pyautogui.click(x=point1[0], y=point1[1], clicks=1, button='left')  # 保存文件
+                            time.sleep(1)
+                            pyautogui.hotkey("y")  # 是否替换已存在的数据
+                            time.sleep(1)
+                            pyautogui.click(1237, 680)
+                            time.sleep(1)
+                            pyautogui.click(x=point1[0] + 80, y=point1[1], clicks=1, button='left')
+                            result_exocad = True
+
+                            time.sleep(2)
+                            subprocess.call("TASKKILL /IM DentalDB.exe")
+                            subprocess.call("TASKKILL /IM DentalCADApp.exe")
+                            time.sleep(1)
+                            check_close_windows()
+
+
+                            if result_exocad == False:
+                                with open(file_false_path, 'r', encoding='utf-8') as fi:
+                                    existing_contents_false = fi.read().splitlines()
+                                if file not in existing_contents_false:
+                                    with open(file_false_path, 'a') as fi:
+                                        fi.write(file + '\n')
+                            elif result_exocad == True:
+                                with open(file_true_path, 'r', encoding='utf-8') as f:
+                                    existing_contents_true = f.read().splitlines()
+                                if file not in existing_contents_true:
+                                    with open(file_true_path, 'a') as f:
+                                        f.write(file + '\n')
 
 
 
@@ -678,42 +689,78 @@ def check_close_windows():
 
 
 def perform_original_exit():
+    # 退出
     pyautogui.hotkey('alt', 'f4')
     time.sleep(1)
     sys.exit()
 
 def detect_in_region_and_exit():
-    EXIT_KEYWORDS = ['牙龈扫描', '回切部分', '螺丝通道', '基台', '贴面', '嵌体']
-    other_exit_keywords = ["合并部分"]
+    # 关键字列表
+    EXIT_KEYWORDS = ['牙龈扫描', '回切部分', '螺丝', '基台', '贴面', '嵌体']
+    # 合并部分关键词
+    MERGE_KEYWORD = '合并部分'
 
-    # 计算区域宽高
-    x0, y0 = 18, 15
-    x1, y1 = 280, 284
-    width = x1 - x0
-    height = y1 - y0
+    # 定义各区域坐标
+    HIDE_REGION = (20, 273, 89 - 20, 306 - 273)         # 原“隐藏”按钮区域
+    EXPAND_REGION = (18, 15, 280 - 18, 841 - 15)        # 展开后检测区域
 
-    # 截取区域截图并 OCR
-    img = np.array(pyautogui.screenshot(region=(x0, y0, width, height)))
+
+    # 1. 点击“隐藏”按钮
+    hide_x, hide_y, hide_w, hide_h = HIDE_REGION
+    hide_img = np.array(pyautogui.screenshot(region=HIDE_REGION))
+    results = reader.readtext(hide_img)
+    for bbox, text, _ in results:
+        if '隐藏' in text:
+            xs = [pt[0] for pt in bbox]
+            ys = [pt[1] for pt in bbox]
+            cx = int(sum(xs)/4) + hide_x
+            cy = int(sum(ys)/4) + hide_y
+            pyautogui.click(x=cx, y=cy)
+            time.sleep(1)
+            break
+
+    # 2. 在新区域内 OCR 识别
+    ex_x, ex_y, ex_w, ex_h = EXPAND_REGION
+    img = np.array(pyautogui.screenshot(region=EXPAND_REGION))
     results = reader.readtext(img)
-    
-    texts = [text for _, text, _ in results]
+    texts = [t for _, t, _ in results]
 
-    # 遍历 OCR 结果，检查关键词
+    # 3a. 检测退出关键词
     for kw in EXIT_KEYWORDS:
         if any(kw in t for t in texts):
-            print(f"检测到关键词 '{kw}'，执行退出操作。")
-            perform_original_exit()
-            return False
-            
-    for kw_1 in other_exit_keywords:
-        if not any(kw_1 in t for t in texts):
-            print(f"未检测到关键词{kw_1},执行退出操作。")
-            perform_original_exit()
+            print(f"检测到退出关键词 '{kw}'，关闭当前 Exocad 会话。")
+            subprocess.call(["TASKKILL", "/IM", "DentalDB.exe", "/F"])
+            subprocess.call(["TASKKILL", "/IM", "DentalCADApp.exe", "/F"])
             return False
 
-    # 继续执行
-    print("左上角识别完成，继续后面流程")
+    # 3b. 检测合并部分关键词
+    if not any(MERGE_KEYWORD in t for t in texts):
+        print(f"未检测到关键筛选词 '{MERGE_KEYWORD}'，关闭当前 Exocad 会话。")
+        subprocess.call(["TASKKILL", "/IM", "DentalDB.exe", "/F"])
+        subprocess.call(["TASKKILL", "/IM", "DentalCADApp.exe", "/F"])
+        return False
+
+    # 4. 筛选通过，重新点击“隐藏”按钮以收起列表
+    print("区域文字筛选通过，继续后续流程。收起列表。")
+    pyautogui.click(x=cx, y=cy)
+    time.sleep(1)
     return True
+
+
+def detect_bridge_type():
+    X0_BRIDGE, Y0_BRIDGE = 18, 15
+    W_BRIDGE, H_BRIDGE = 280 - X0_BRIDGE, 284 - Y0_BRIDGE
+
+    BRIDGE_KEYWORD = '连接杆'
+    img = np.array(pyautogui.screenshot(region=(X0_BRIDGE, Y0_BRIDGE, W_BRIDGE, H_BRIDGE)))
+    results = reader.readtext(img)
+    texts = [text for _, text, _ in results]
+    if any(BRIDGE_KEYWORD in t for t in texts):
+        print("检测到 '连接杆'，判定为牙桥（Bridge）。")
+        return 'bridge'
+    else:
+        print("未检测到 '连接杆'，判定为单冠（Single Crown）。")
+        return 'single'
 
 
 
