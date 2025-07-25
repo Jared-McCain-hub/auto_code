@@ -17,7 +17,7 @@ reader = easyocr.Reader(['ch_sim'])
 
 def main():
     DentalDB_path = "D:/exocad-DentalCAD3.2-2024-02-14/exocad-DentalCAD3.2-2024-02-14/DentalDB/bin/DentalDB.exe"
-    source_dir = r"D:\exocad-data\datas_2025-06-20-huaxing-exocalonly-10"
+    source_dir = r"D:\test_data\need-test"
     iamges_true_path= os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir)+ "_true_images")
     iamges_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false_images")
     file_true_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_true.txt")
