@@ -701,7 +701,7 @@ def detect_in_region_and_exit():
     MERGE_KEYWORD = '合并部分'
 
     # 定义各区域坐标
-    HIDE_REGION = (20, 273, 89 - 20, 306 - 273)         # 原“隐藏”按钮区域
+    HIDE_REGION = (20, 273, 91 - 20, 376 - 273)         # 原“隐藏”按钮区域
     EXPAND_REGION = (18, 15, 280 - 18, 841 - 15)        # 展开后检测区域
 
 
@@ -709,8 +709,9 @@ def detect_in_region_and_exit():
     hide_x, hide_y, hide_w, hide_h = HIDE_REGION
     hide_img = np.array(pyautogui.screenshot(region=HIDE_REGION))
     results = reader.readtext(hide_img)
+    print("OCR result:", results)
     for bbox, text, _ in results:
-        if '隐藏' in text:
+        if '隐' in text:
             xs = [pt[0] for pt in bbox]
             ys = [pt[1] for pt in bbox]
             cx = int(sum(xs)/4) + hide_x
