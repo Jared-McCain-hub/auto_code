@@ -763,6 +763,8 @@ def detect_anatomical_morphology():
             cy = int(sum(ys)/4) + hide_y
             return True
 
+    return False
+
 
 
 
