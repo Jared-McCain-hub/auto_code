@@ -23,6 +23,7 @@ def main():
     iamges_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false_images")
     file_true_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_true.txt")
     file_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false.txt")
+    file_throw_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_throw.txt")
     if not os.path.exists(iamges_true_path):
         os.makedirs(iamges_true_path)
     if not os.path.exists(iamges_false_path):
@@ -700,7 +701,7 @@ def perform_original_exit():
 
 def detect_in_region_and_exit():
     # 关键字列表
-    EXIT_KEYWORDS = ['牙龈扫描', '回切部分', '螺丝', '基台', '贴面', '嵌体']
+    # EXIT_KEYWORDS = ['牙龈扫描', '回切部分', '螺丝', '基台', '贴面', '嵌体']
     # 合并部分关键词
     MERGE_KEYWORD = '合并部分'
 
@@ -731,12 +732,12 @@ def detect_in_region_and_exit():
     texts = [t for _, t, _ in results]
 
     # 3a. 检测退出关键词
-    for kw in EXIT_KEYWORDS:
-        if any(kw in t for t in texts):
-            print(f"检测到退出关键词 '{kw}'，关闭当前 Exocad 会话。")
-            subprocess.call(["TASKKILL", "/IM", "DentalDB.exe", "/F"])
-            subprocess.call(["TASKKILL", "/IM", "DentalCADApp.exe", "/F"])
-            return False
+    # for kw in EXIT_KEYWORDS:
+    #     if any(kw in t for t in texts):
+    #         print(f"检测到退出关键词 '{kw}'，关闭当前 Exocad 会话。")
+    #         subprocess.call(["TASKKILL", "/IM", "DentalDB.exe", "/F"])
+    #         subprocess.call(["TASKKILL", "/IM", "DentalCADApp.exe", "/F"])
+    #         return False
 
     # 3b. 检测合并部分关键词
     if not any(MERGE_KEYWORD in t for t in texts):
@@ -781,6 +782,12 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     # 切换到下颌视角
     pyautogui.click(2500, 1325)  # 下颌视角
     time.sleep(3)
+
+    # 保存下颌图片
+    lowtoothmesh_path = pyautogui.screenshot()
+    pngnamelow = os.path.join(iamges_true_path, file + "-LowerJaw.png")
+    print(pngnamelow)
+    lowtoothmesh_path.save(pngnamelow)
     
 
     pyautogui.hotkey("a")  # 对颌
@@ -788,9 +795,9 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     pyautogui.hotkey("s")  
     time.sleep(2)
     
-    # 截取第一张图
+    # 截取下颌第一张图
     screenshot_before = pyautogui.screenshot()
-    png_before = os.path.join(iamges_true_path, file + "-BeforeBridge.png")
+    png_before = os.path.join(iamges_true_path, file + "-BeforeBridge_LowerJaw.png")
     screenshot_before.save(png_before)
     
 
@@ -799,7 +806,7 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     
     # 截取第二张图
     screenshot_after = pyautogui.screenshot()
-    png_after = os.path.join(iamges_true_path, file + "-AfterBridge.png")
+    png_after = os.path.join(iamges_true_path, file + "-AfterBridge_LowerJaw.png")
     screenshot_after.save(png_after)
     
     
@@ -875,12 +882,18 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     pyautogui.click(2500, 1395)  # 上颌视角
     time.sleep(3)
 
+    # 保存上颌图片
+    lowtoothmesh_path = pyautogui.screenshot()
+    pngnamelow = os.path.join(iamges_true_path, file + "-UpperJaw.png")
+    print(pngnamelow)
+    lowtoothmesh_path.save(pngnamelow)
+
     pyautogui.hotkey("m")  # 消除桥体合并部分
     time.sleep(3)
 
-    # 截取第一张图
+    # 截取上颌第一张图
     screenshot_before = pyautogui.screenshot()
-    png_before = os.path.join(iamges_true_path, file + "-BeforeBridge.png")
+    png_before = os.path.join(iamges_true_path, file + "-BeforeBridge_UpperJaw.png")
     screenshot_before.save(png_before)
     
 
@@ -889,7 +902,7 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     
     # 截取第二张图
     screenshot_after = pyautogui.screenshot()
-    png_after = os.path.join(iamges_true_path, file + "-AfterBridge.png")
+    png_after = os.path.join(iamges_true_path, file + "-AfterBridge_UpperJaw.png")
     screenshot_after.save(png_after)
     
     
@@ -1020,7 +1033,7 @@ def find_bridge_center(before_image_path, after_image_path):
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     
     # 保存差异图片用于调试
-    diff_debug_path = before_image_path.replace("-BeforeBridge.png", "-DiffDebug.png")
+    diff_debug_path = before_image_path.replace("-BeforeBridge_", "-DiffDebug.png")
     cv2.imwrite(diff_debug_path, thresh)
     print(f"差异图片已保存到: {diff_debug_path}")
     
@@ -1042,7 +1055,7 @@ def find_bridge_center(before_image_path, after_image_path):
             # 在原图上标记中心点用于调试
             img_debug = cv2.imread(after_image_path)
             cv2.circle(img_debug, (cx, cy), 10, (0, 255, 0), -1)  # 绿色圆点
-            debug_marked_path = after_image_path.replace("-AfterBridge.png", "-MarkedCenter.png")
+            debug_marked_path = after_image_path.replace("-AfterBridge_", "-MarkedCenter.png")
             cv2.imwrite(debug_marked_path, img_debug)
             print(f"标记中心点的图片已保存到: {debug_marked_path}")
             
@@ -1080,7 +1093,7 @@ def find_all_bridge_centers(before_image_path, after_image_path):
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     
     # 保存差异图片用于调试
-    diff_debug_path = before_image_path.replace("-BeforeBridge.png", "-DiffDebug.png")
+    diff_debug_path = before_image_path.replace("-BeforeBridge_", "-DiffDebug.png")
     cv2.imwrite(diff_debug_path, thresh)
     print(f"差异图片已保存到: {diff_debug_path}")
     
@@ -1127,7 +1140,7 @@ def find_all_bridge_centers(before_image_path, after_image_path):
                     cv2.putText(img_debug, f"{i+1}", (cx+15, cy+5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         
         # 保存标记了所有中心点的调试图片
-        debug_marked_path = after_image_path.replace("-AfterBridge.png", "-MarkedAllCenters.png")
+        debug_marked_path = after_image_path.replace("-AfterBridge_", "-MarkedAllCenters.png")
         cv2.imwrite(debug_marked_path, img_debug)
         print(f"标记所有中心点的图片已保存到: {debug_marked_path}")
     
