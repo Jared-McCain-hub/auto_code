@@ -134,39 +134,9 @@ def main():
             else:
                 if detect_bridge_type() == "bridge":
                     # 牙桥
-                    time.sleep(1)
-                    pyautogui.click(1535, 855)
-                    time.sleep(1)
+                    print("检测到牙桥类型，开始处理桥体...")
+                    save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path, file_true_path, file_false_path)                                    
 
-                    region = (0, 0, 1000, 1000)
-                    save_img = pyautogui.screenshot(region=region)
-                    img_array = np.array(save_img)
-
-                    result = reader.readtext(img_array)
-                    for detection in result:
-                        text = detection[1]
-                        if "全部" in text:
-                            corrdinates = detection[0]
-                            save_x = int((corrdinates[0][0] + corrdinates[2][0]) / 2)
-                            save_y = int((corrdinates[0][1] + corrdinates[2][1]) / 2)
-                            # 隐藏所有对象
-                            pyautogui.keyDown("ctrl")
-                            pyautogui.click(x=save_x, y=save_y)
-                            pyautogui.keyUp("ctrl")
-                            time.sleep(1)
-                            break
-
-                    pyautogui.click(272, 705)
-                    time.sleep(1)
-                    pyautogui.hotkey("a")  # 对颌
-                    print(1111111111111111)
-                    time.sleep(1)
-                    pyautogui.hotkey("s")  # 工作模型扫描
-                    print(2222222222222222)
-                    time.sleep(2)
-                    pyautogui.hotkey("m")
-                    print(3333333333333333)
-                    time.sleep(2)
 
                 else:
                     # 单冠
@@ -796,6 +766,375 @@ def detect_bridge_type():
     else:
         print("未检测到 '连接杆'，判定为单冠（Single Crown）。")
         return 'single'
+
+
+def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path, file_true_path, file_false_path):
+    """
+    保存牙桥组件的函数
+    """
+    global result_exocad
+    
+    print("开始处理牙桥组件...")
+    
+    print("开始处理下颌...")
+
+    # 切换到下颌视角
+    pyautogui.click(2500, 1325)  # 下颌视角
+    time.sleep(3)
+    
+
+    pyautogui.hotkey("a")  # 对颌
+    time.sleep(1)
+    pyautogui.hotkey("s")  
+    time.sleep(2)
+    
+    # 截取第一张图
+    screenshot_before = pyautogui.screenshot()
+    png_before = os.path.join(iamges_true_path, file + "-BeforeBridge.png")
+    screenshot_before.save(png_before)
+    
+
+    pyautogui.hotkey("m")  # 显示桥体合并部分
+    time.sleep(3)
+    
+    # 截取第二张图
+    screenshot_after = pyautogui.screenshot()
+    png_after = os.path.join(iamges_true_path, file + "-AfterBridge.png")
+    screenshot_after.save(png_after)
+    
+    
+    bridge_centers = find_all_bridge_centers(png_before, png_after) # 比对两张图片，找到所有桥体位置
+    
+    if bridge_centers:
+        print(f"找到 {len(bridge_centers)} 个桥体组件")
+        
+        success_count = 0
+        for i, bridge_center in enumerate(bridge_centers):
+            print(f"处理第 {i+1} 个桥体组件，位置: {bridge_center}")
+            
+            # 点击桥体中心位置
+            pyautogui.click(x=bridge_center[0], y=bridge_center[1], clicks=1, button='right', duration=1)
+            time.sleep(2)
+            
+            # 查找并点击保存选项
+            region = (bridge_center[0], bridge_center[1], 1200, 1200)
+            save_img = pyautogui.screenshot(region=region)
+            img_array = np.array(save_img)
+            result = reader.readtext(img_array)
+            
+            save_point = None
+            for detection in result:
+                text = detection[1]
+                if "保存" in text:
+                    print(f"找到保存选项: {text}")
+                    corrdinates = detection[0]
+                    save_x = int((corrdinates[0][0] + corrdinates[2][0]) / 2)
+                    save_y = int((corrdinates[0][1] + corrdinates[2][1]) / 2)
+                    save_point = (save_x, save_y)
+                    break
+            
+            if save_point:
+                # 点击保存到文件
+                pyautogui.click(x=bridge_center[0] + save_point[0], y=bridge_center[1] + save_point[1], clicks=1, button='left')
+                time.sleep(10)
+                
+                # 等待保存窗口弹出
+                wait_result, point = wait_for_condition()
+                if wait_result:
+                    # 填写保存路径
+                    pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left')
+                    pyautogui.hotkey("ctrl", "a")
+                    pyautogui.hotkey("backspace")
+                    time.sleep(1)
+                    
+                    bridge_path = os.path.join(source_dir, file, file + "-bridge_slm_cad.stl")
+                    pyperclip.copy(bridge_path)
+                    print(f"保存桥体到: {bridge_path}")
+                    time.sleep(1)
+                    pyautogui.hotkey("ctrl", "v")
+                    time.sleep(1)
+                    
+                    # 点击保存按钮
+                    pyautogui.click(x=point[0], y=point[1], clicks=1, button='left')
+                    time.sleep(2)
+                    pyautogui.hotkey("y")  # 确认替换
+                    time.sleep(1)
+                    pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left')  # 点击取消
+                    time.sleep(1)
+                    
+                    success_count += 1
+                    print(f"第 {i+1} 个桥体保存成功")
+                else:
+                    print(f"第 {i+1} 个桥体保存窗口未弹出")
+            else:
+                print(f"第 {i+1} 个桥体未找到保存选项")
+
+
+    print("开始处理上颌...")
+
+    pyautogui.click(2500, 1395)  # 上颌视角
+    time.sleep(3)
+
+    pyautogui.hotkey("m")  # 消除桥体合并部分
+    time.sleep(3)
+
+    # 截取第一张图
+    screenshot_before = pyautogui.screenshot()
+    png_before = os.path.join(iamges_true_path, file + "-BeforeBridge.png")
+    screenshot_before.save(png_before)
+    
+
+    pyautogui.hotkey("m")  # 显示桥体合并部分
+    time.sleep(3)
+    
+    # 截取第二张图
+    screenshot_after = pyautogui.screenshot()
+    png_after = os.path.join(iamges_true_path, file + "-AfterBridge.png")
+    screenshot_after.save(png_after)
+    
+    
+    bridge_centers = find_all_bridge_centers(png_before, png_after) # 比对两张图片，找到所有桥体位置
+    
+    if bridge_centers:
+        print(f"找到 {len(bridge_centers)} 个桥体组件")
+        
+        success_count = 0
+        for i, bridge_center in enumerate(bridge_centers):
+            print(f"处理第 {i+1} 个桥体组件，位置: {bridge_center}")
+            
+            # 点击桥体中心位置
+            pyautogui.click(x=bridge_center[0], y=bridge_center[1], clicks=1, button='right', duration=1)
+            time.sleep(2)
+            
+            # 查找并点击保存选项
+            region = (bridge_center[0], bridge_center[1], 1200, 1200)
+            save_img = pyautogui.screenshot(region=region)
+            img_array = np.array(save_img)
+            result = reader.readtext(img_array)
+            
+            save_point = None
+            for detection in result:
+                text = detection[1]
+                if "保存" in text:
+                    print(f"找到保存选项: {text}")
+                    corrdinates = detection[0]
+                    save_x = int((corrdinates[0][0] + corrdinates[2][0]) / 2)
+                    save_y = int((corrdinates[0][1] + corrdinates[2][1]) / 2)
+                    save_point = (save_x, save_y)
+                    break
+            
+            if save_point:
+                # 点击保存到文件
+                pyautogui.click(x=bridge_center[0] + save_point[0], y=bridge_center[1] + save_point[1], clicks=1, button='left')
+                time.sleep(10)
+                
+                # 等待保存窗口弹出
+                wait_result, point = wait_for_condition()
+                if wait_result:
+                    # 填写保存路径
+                    pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left')
+                    pyautogui.hotkey("ctrl", "a")
+                    pyautogui.hotkey("backspace")
+                    time.sleep(1)
+                    
+                    bridge_path = os.path.join(source_dir, file, file + "-bridge_slm_cad.stl")
+                    pyperclip.copy(bridge_path)
+                    print(f"保存桥体到: {bridge_path}")
+                    time.sleep(1)
+                    pyautogui.hotkey("ctrl", "v")
+                    time.sleep(1)
+                    
+                    # 点击保存按钮
+                    pyautogui.click(x=point[0], y=point[1], clicks=1, button='left')
+                    time.sleep(2)
+                    pyautogui.hotkey("y")  # 确认替换
+                    time.sleep(1)
+                    pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left')  # 点击取消
+                    time.sleep(1)
+                    
+                    success_count += 1
+                    print(f"第 {i+1} 个桥体保存成功")
+                else:
+                    print(f"第 {i+1} 个桥体保存窗口未弹出")
+            else:
+                print(f"第 {i+1} 个桥体未找到保存选项")
+
+        
+        if success_count > 0:
+            result_exocad = True
+            print(f"成功保存 {success_count} 个桥体组件")
+        else:
+            result_exocad = False
+            print("所有桥体组件保存失败")
+    else:
+        print("未找到桥体中心位置")
+        result_exocad = False
+    
+    # 记录结果
+    if result_exocad == False:
+        with open(file_false_path, 'r', encoding='utf-8') as fi:
+            existing_contents_false = fi.read().splitlines()
+        if file not in existing_contents_false:
+            with open(file_false_path, 'a') as fi:
+                fi.write(file + '\n')
+    elif result_exocad == True:
+        with open(file_true_path, 'r', encoding='utf-8') as f:
+            existing_contents_true = f.read().splitlines()
+        if file not in existing_contents_true:
+            with open(file_true_path, 'a') as f:
+                f.write(file + '\n')
+    
+    # 清理进程
+    time.sleep(2)
+    subprocess.call("TASKKILL /IM DentalDB.exe")
+    subprocess.call("TASKKILL /IM DentalCADApp.exe")
+    time.sleep(1)
+    check_close_windows()
+
+
+def find_bridge_center(before_image_path, after_image_path):
+    """
+    通过比对两张图片找到桥体中心位置
+    """
+    # 读取两张图片
+    img_before = cv2.imread(before_image_path)
+    img_after = cv2.imread(after_image_path)
+    
+    if img_before is None or img_after is None:
+        print("无法读取图片文件")
+        return None
+    
+    # 转换为灰度图
+    gray_before = cv2.cvtColor(img_before, cv2.COLOR_BGR2GRAY)
+    gray_after = cv2.cvtColor(img_after, cv2.COLOR_BGR2GRAY)
+    
+    # 计算差异
+    diff = cv2.absdiff(gray_before, gray_after)
+    
+    # 应用阈值，突出差异区域
+    _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+    
+    # 形态学操作，去除噪声
+    kernel = np.ones((5,5), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+    
+    # 保存差异图片用于调试
+    diff_debug_path = before_image_path.replace("-BeforeBridge.png", "-DiffDebug.png")
+    cv2.imwrite(diff_debug_path, thresh)
+    print(f"差异图片已保存到: {diff_debug_path}")
+    
+    # 查找轮廓
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    if contours:
+        # 找到最大的轮廓（假设桥体是最大的新增区域）
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # 计算轮廓的中心点
+        M = cv2.moments(largest_contour)
+        if M["m00"] != 0:
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            
+            print(f"桥体中心位置: ({cx}, {cy})")
+            
+            # 在原图上标记中心点用于调试
+            img_debug = cv2.imread(after_image_path)
+            cv2.circle(img_debug, (cx, cy), 10, (0, 255, 0), -1)  # 绿色圆点
+            debug_marked_path = after_image_path.replace("-AfterBridge.png", "-MarkedCenter.png")
+            cv2.imwrite(debug_marked_path, img_debug)
+            print(f"标记中心点的图片已保存到: {debug_marked_path}")
+            
+            return (cx, cy)
+    
+    print("未找到明显的桥体区域")
+    return None
+
+
+def find_all_bridge_centers(before_image_path, after_image_path):
+    """
+    通过比对两张图片找到所有桥体中心位置
+    """
+    # 读取两张图片
+    img_before = cv2.imread(before_image_path)
+    img_after = cv2.imread(after_image_path)
+    
+    if img_before is None or img_after is None:
+        print("无法读取图片文件")
+        return []
+    
+    # 转换为灰度图
+    gray_before = cv2.cvtColor(img_before, cv2.COLOR_BGR2GRAY)
+    gray_after = cv2.cvtColor(img_after, cv2.COLOR_BGR2GRAY)
+    
+    # 计算差异
+    diff = cv2.absdiff(gray_before, gray_after)
+    
+    # 应用阈值，突出差异区域
+    _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+    
+    # 形态学操作，去除噪声
+    kernel = np.ones((5,5), np.uint8)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+    
+    # 保存差异图片用于调试
+    diff_debug_path = before_image_path.replace("-BeforeBridge.png", "-DiffDebug.png")
+    cv2.imwrite(diff_debug_path, thresh)
+    print(f"差异图片已保存到: {diff_debug_path}")
+    
+    # 查找轮廓
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    
+    bridge_centers = []
+    if contours:
+        # 按面积排序轮廓，找到所有足够大的区域
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        
+        # 过滤掉太小的轮廓（噪声）
+        min_area = 1000  # 最小面积阈值
+        valid_contours = [c for c in contours if cv2.contourArea(c) > min_area]
+        
+        print(f"找到 {len(valid_contours)} 个有效的桥体区域")
+        
+        # 在原图上标记所有中心点用于调试
+        img_debug = cv2.imread(after_image_path)
+        
+        for i, contour in enumerate(valid_contours):
+            # 计算轮廓的中心点
+            M = cv2.moments(contour)
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                
+                # 检查是否与已找到的中心点距离太近（避免重复）
+                min_distance = 50  # 最小距离阈值
+                too_close = False
+                for existing_center in bridge_centers:
+                    distance = ((cx - existing_center[0])**2 + (cy - existing_center[1])**2)**0.5
+                    if distance < min_distance:
+                        too_close = True
+                        break
+                
+                if not too_close:
+                    bridge_centers.append((cx, cy))
+                    print(f"桥体 {i+1} 中心位置: ({cx}, {cy})")
+                    
+                    # 在调试图片上标记中心点
+                    color = (0, 255, 0) if i == 0 else (255, 0, 0)  # 第一个绿色，其他红色
+                    cv2.circle(img_debug, (cx, cy), 10, color, -1)
+                    cv2.putText(img_debug, f"{i+1}", (cx+15, cy+5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        
+        # 保存标记了所有中心点的调试图片
+        debug_marked_path = after_image_path.replace("-AfterBridge.png", "-MarkedAllCenters.png")
+        cv2.imwrite(debug_marked_path, img_debug)
+        print(f"标记所有中心点的图片已保存到: {debug_marked_path}")
+    
+    if not bridge_centers:
+        print("未找到明显的桥体区域")
+    
+    return bridge_centers
 
 
 
