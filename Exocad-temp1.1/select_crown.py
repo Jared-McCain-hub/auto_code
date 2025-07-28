@@ -25,6 +25,15 @@ def main():
     file_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false.txt") # 存放导出失败的数据
     file_throw_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_throw.txt") # 存放不要的数据
 
+    # 检查必需的文件路径
+    if not os.path.exists(source_dir):
+        print(f"错误：源目录不存在: {source_dir}")
+        return
+    
+    if not os.path.exists(DentalDB_path):
+        print(f"错误：DentalDB.exe 不存在: {DentalDB_path}")
+        return
+
     if not os.path.exists(iamges_true_path):
         os.makedirs(iamges_true_path)
     if not os.path.exists(iamges_false_path):
@@ -120,8 +129,11 @@ def main():
 
             if not detect_in_region_and_exit():
                 print("退出操作，填入到throw.txt中")
-                with open(file_throw_path, 'r', encoding='utf-8') as fi:
-                    existing_contents_throw = fi.read().splitlines()
+                try:
+                    with open(file_throw_path, 'r', encoding='utf-8') as fi:
+                        existing_contents_throw = fi.read().splitlines()
+                except FileNotFoundError:
+                    existing_contents_throw = []
                 if file not in existing_contents_throw:
                     with open(file_throw_path, 'a') as fi:
                         fi.write(file + '\n')
@@ -1104,16 +1116,16 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     time.sleep(3)
 
     # 截取上颌截图
-    lowtoothmesh_path = pyautogui.screenshot()
-    pngnamelow = os.path.join(iamges_true_path, file + "-UpperJaw.png")
-    lowtoothmesh_path.save(pngnamelow)
+    upptoothmesh_path = pyautogui.screenshot()
+    pngnameupp = os.path.join(iamges_true_path, file + "-UpperJaw.png")
+    upptoothmesh_path.save(pngnameupp)
 
     time.sleep(1)
     region_upp = (350, 100, 1750, 1200)
 
     # 获取上颌并保存
-    result = identify_exist_crown(pngnamelow) # 判断是否存在冠
-    boxes = detector.process(lowtoothmesh_path)
+    result = identify_exist_crown(pngnameupp) # 判断是否存在冠
+    boxes = detector.process(upptoothmesh_path)
     print(boxes)
 
     if result == True and len(boxes) > 0:
@@ -1122,11 +1134,11 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     
         # 保存上颌mesh
         time.sleep(3)
-        result = click_toothmesh_with_box(pngnamelow)
+        result = click_toothmesh_with_box(pngnameupp)
         if result == False:
-            os.remove(pngnamelow)
-            pngfalselow = os.path.join(iamges_false_path, file + "-UpperJaw.png")
-            lowtoothmesh_path.save(pngfalselow)
+            os.remove(pngnameupp)
+            pngfalseupp = os.path.join(iamges_false_path, file + "-UpperJaw.png")
+            upptoothmesh_path.save(pngfalseupp)
             result_exocad = False
         else:
             # 检查保存窗口是否弹出
@@ -1139,9 +1151,9 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
                 pyautogui.hotkey("ctrl", "a")
                 pyautogui.hotkey("backspace")
                 time.sleep(1)
-                lowerpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
-                pyperclip.copy(lowerpath)
-                print(lowerpath)
+                upperpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
+                pyperclip.copy(upperpath)
+                print(upperpath)
                 time.sleep(1)
                 pyautogui.hotkey("ctrl", "v")
                 time.sleep(1)
@@ -1159,9 +1171,9 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     else:
         result = click_toothmesh(region_upp)
         if result == False:
-            os.remove(pngnamelow)
-            pngfalselow = os.path.join(iamges_false_path, file + "-UpperJaw.png")
-            lowtoothmesh_path.save(pngfalselow)
+            os.remove(pngnameupp)
+            pngfalseupp = os.path.join(iamges_false_path, file + "-UpperJaw.png")
+            upptoothmesh_path.save(pngfalseupp)
             result_exocad = False
         else:
             # 检查保存窗口是否弹出
@@ -1174,9 +1186,9 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
                 pyautogui.hotkey("ctrl", "a")
                 pyautogui.hotkey("backspace")
                 time.sleep(1)
-                lowerpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
-                pyperclip.copy(lowerpath)
-                print(lowerpath)
+                upperpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
+                pyperclip.copy(upperpath)
+                print(upperpath)
                 time.sleep(1)
                 pyautogui.hotkey("ctrl", "v")
                 time.sleep(1)
