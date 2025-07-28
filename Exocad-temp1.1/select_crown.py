@@ -22,8 +22,9 @@ def main():
     iamges_true_path= os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir)+ "_true_images")
     iamges_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false_images")
     file_true_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_true.txt")
-    file_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false.txt")
-    file_throw_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_throw.txt")
+    file_false_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_false.txt") # 存放导出失败的数据
+    file_throw_path = os.path.join(os.path.dirname(source_dir), os.path.basename(source_dir) + "_throw.txt") # 存放不要的数据
+
     if not os.path.exists(iamges_true_path):
         os.makedirs(iamges_true_path)
     if not os.path.exists(iamges_false_path):
@@ -118,19 +119,13 @@ def main():
             time.sleep(1)
 
             if not detect_in_region_and_exit():
-                print("退出操作，填入到False.txt中")
+                print("退出操作，填入到throw.txt中")
                 with open(file_false_path, 'r', encoding='utf-8') as fi:
                     existing_contents_false = fi.read().splitlines()
                 if file not in existing_contents_false:
                     with open(file_false_path, 'a') as fi:
                         fi.write(file + '\n')
                 
-                # 保存false截图
-                # os.remove(pngnamelow)
-                # pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
-                # lowtoothmesh_path.save(pngfalselow)
-                # result_exocad = False
-                # continue
 
             else:
                 if detect_bridge_type() == "bridge":
@@ -784,10 +779,10 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     time.sleep(3)
 
     # 保存下颌图片
-    lowtoothmesh_path = pyautogui.screenshot()
-    pngnamelow = os.path.join(iamges_true_path, file + "-LowerJaw.png")
-    print(pngnamelow)
-    lowtoothmesh_path.save(pngnamelow)
+    # lowtoothmesh_path = pyautogui.screenshot()
+    # pngnamelow = os.path.join(iamges_true_path, file + "-LowerJaw.png")
+    # print(pngnamelow)
+    # lowtoothmesh_path.save(pngnamelow)
     
 
     pyautogui.hotkey("a")  # 对颌
@@ -883,10 +878,10 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     time.sleep(3)
 
     # 保存上颌图片
-    lowtoothmesh_path = pyautogui.screenshot()
-    pngnamelow = os.path.join(iamges_true_path, file + "-UpperJaw.png")
-    print(pngnamelow)
-    lowtoothmesh_path.save(pngnamelow)
+    # lowtoothmesh_path = pyautogui.screenshot()
+    # pngnamelow = os.path.join(iamges_true_path, file + "-UpperJaw.png")
+    # print(pngnamelow)
+    # lowtoothmesh_path.save(pngnamelow)
 
     pyautogui.hotkey("m")  # 消除桥体合并部分
     time.sleep(3)
@@ -982,7 +977,206 @@ def save_bridge_components(file, source_dir, iamges_true_path, iamges_false_path
     else:
         print("未找到桥体中心位置")
         result_exocad = False
+  
+  
+    # 保存下颌本身
+    print("开始保存下颌本身...")
+
+    pyautogui.click(2500, 1325) # 下颌视角
+    time.sleep(3)
+
+    # 截取下颌截图
+    lowtoothmesh_path = pyautogui.screenshot()
+    pngnamelow = os.path.join(iamges_true_path, file + "-LowerJaw.png")
+    lowtoothmesh_path.save(pngnamelow)
+
+    time.sleep(1)
+    region_low = (350, 100, 1750, 1200)
+
+    # 获取下颌并保存
+    result = identify_exist_crown(pngnamelow) # 判断是否存在冠
+    boxes = detector.process(lowtoothmesh_path)
+    print(boxes)
+
+    if result == True and len(boxes) > 0:
+        print("下颌box", boxes)
+        get_box_point(boxes)
     
+        # 保存下颌mesh
+        time.sleep(3)
+        result = click_toothmesh_with_box(pngnamelow)
+        if result == False:
+            os.remove(pngnamelow)
+            pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
+            lowtoothmesh_path.save(pngfalselow)
+            result_exocad = False
+        else:
+            # 检查保存窗口是否弹出
+            time.sleep(5)
+            wait_result, point = wait_for_condition()
+            if not wait_result:
+                result_exocad = False
+            else:
+                pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left') # 保存文件
+                pyautogui.hotkey("ctrl", "a")
+                pyautogui.hotkey("backspace")
+                time.sleep(1)
+                lowerpath = os.path.join(source_dir, file, file + "-LowerJaw.stl")
+                pyperclip.copy(lowerpath)
+                print(lowerpath)
+                time.sleep(1)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(1)
+                pyautogui.click(x=point[0], y=point[1], clicks=1, button='left') # 保存文件
+                time.sleep(2)
+                pyautogui.hotkey("y") # 是否替换已存在的数据
+                time.sleep(1)
+                pyautogui.click(x=1237, y=680, clicks=1, button='left')
+                time.sleep(1)
+                pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left') # 避免窗口还存在,点击取消
+                time.sleep(1)
+                result_exocad = True
+                print("下颌保存完成。")     
+    else:
+        result = click_toothmesh(region_low)
+        if result == False:
+            os.remove(pngnamelow)
+            pngfalselow = os.path.join(iamges_false_path, file + "-LowerJaw.png")
+            lowtoothmesh_path.save(pngfalselow)
+            result_exocad = False
+        else:
+            # 检查保存窗口是否弹出
+            time.sleep(5)
+            wait_result, point = wait_for_condition()
+            if not wait_result:
+                result_exocad = False
+            else:
+                pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left') # 保存文件
+                pyautogui.hotkey("ctrl", "a")
+                pyautogui.hotkey("backspace")
+                time.sleep(1)
+                lowerpath = os.path.join(source_dir, file, file + "-LowerJaw.stl")
+                pyperclip.copy(lowerpath)
+                print(lowerpath)
+                time.sleep(1)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(1)
+                pyautogui.click(x=point[0], y=point[1], clicks=1, button='left') # 保存文件
+                time.sleep(2)
+                pyautogui.hotkey("y") # 是否替换已存在的数据
+                time.sleep(1)
+                pyautogui.click(x=1237, y=680, clicks=1, button='left')
+                time.sleep(1)
+                pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left') # 避免窗口还存在,点击取消
+                time.sleep(1)
+                result_exocad = True
+                print("下颌保存成功")    
+
+
+
+
+    
+    
+    # 保存上颌本身
+    print("开始保存上颌本身...")
+
+    pyautogui.click(2500, 1395) # 上颌视角
+    time.sleep(3)
+
+    # 截取上颌截图
+    lowtoothmesh_path = pyautogui.screenshot()
+    pngnamelow = os.path.join(iamges_true_path, file + "-UpperJaw.png")
+    lowtoothmesh_path.save(pngnamelow)
+
+    time.sleep(1)
+    region_upp = (350, 100, 1750, 1200)
+
+    # 获取上颌并保存
+    result = identify_exist_crown(pngnamelow) # 判断是否存在冠
+    boxes = detector.process(lowtoothmesh_path)
+    print(boxes)
+
+    if result == True and len(boxes) > 0:
+        print("上颌box", boxes)
+        get_box_point(boxes)
+    
+        # 保存上颌mesh
+        time.sleep(3)
+        result = click_toothmesh_with_box(pngnamelow)
+        if result == False:
+            os.remove(pngnamelow)
+            pngfalselow = os.path.join(iamges_false_path, file + "-UpperJaw.png")
+            lowtoothmesh_path.save(pngfalselow)
+            result_exocad = False
+        else:
+            # 检查保存窗口是否弹出
+            time.sleep(5)
+            wait_result, point = wait_for_condition()
+            if not wait_result:
+                result_exocad = False
+            else:
+                pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left') # 保存文件
+                pyautogui.hotkey("ctrl", "a")
+                pyautogui.hotkey("backspace")
+                time.sleep(1)
+                lowerpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
+                pyperclip.copy(lowerpath)
+                print(lowerpath)
+                time.sleep(1)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(1)
+                pyautogui.click(x=point[0], y=point[1], clicks=1, button='left') # 保存文件
+                time.sleep(2)
+                pyautogui.hotkey("y") # 是否替换已存在的数据
+                time.sleep(1)
+                pyautogui.click(x=1237, y=680, clicks=1, button='left')
+                time.sleep(1)
+                pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left') # 避免窗口还存在,点击取消
+                time.sleep(1)
+                result_exocad = True
+                print("上颌保存完成。")
+
+    else:
+        result = click_toothmesh(region_upp)
+        if result == False:
+            os.remove(pngnamelow)
+            pngfalselow = os.path.join(iamges_false_path, file + "-UpperJaw.png")
+            lowtoothmesh_path.save(pngfalselow)
+            result_exocad = False
+        else:
+            # 检查保存窗口是否弹出
+            time.sleep(5)
+            wait_result, point = wait_for_condition()
+            if not wait_result:
+                result_exocad = False
+            else:
+                pyautogui.click(x=point[0], y=point[1]-70, clicks=1, button='left') # 保存文件
+                pyautogui.hotkey("ctrl", "a")
+                pyautogui.hotkey("backspace")
+                time.sleep(1)
+                lowerpath = os.path.join(source_dir, file, file + "-UpperJaw.stl")
+                pyperclip.copy(lowerpath)
+                print(lowerpath)
+                time.sleep(1)
+                pyautogui.hotkey("ctrl", "v")
+                time.sleep(1)
+                pyautogui.click(x=point[0], y=point[1], clicks=1, button='left') # 保存文件
+                time.sleep(2)
+                pyautogui.hotkey("y") # 是否替换已存在的数据
+                time.sleep(1)
+                pyautogui.click(x=1237, y=680, clicks=1, button='left')
+                time.sleep(1)
+                pyautogui.click(x=point[0] + 80, y=point[1], clicks=1, button='left') # 避免窗口还存在,点击取消
+                time.sleep(1)
+                result_exocad = True
+                print("上颌保存成功")   
+
+
+
+
+
+
+
     # 记录结果
     if result_exocad == False:
         with open(file_false_path, 'r', encoding='utf-8') as fi:
