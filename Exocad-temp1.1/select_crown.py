@@ -134,8 +134,42 @@ def main():
             else:
                 if detect_bridge_type() == "bridge":
                     # 牙桥
-                    continue
+                    time.sleep(1)
+                    pyautogui.click(1535, 855)
+                    time.sleep(1)
+
+                    region = (0, 0, 1000, 1000)
+                    save_img = pyautogui.screenshot(region=region)
+                    img_array = np.array(save_img)
+
+                    result = reader.readtext(img_array)
+                    for detection in result:
+                        text = detection[1]
+                        if "全部" in text:
+                            corrdinates = detection[0]
+                            save_x = int((corrdinates[0][0] + corrdinates[2][0]) / 2)
+                            save_y = int((corrdinates[0][1] + corrdinates[2][1]) / 2)
+                            # 隐藏所有对象
+                            pyautogui.keyDown("ctrl")
+                            pyautogui.click(x=save_x, y=save_y)
+                            pyautogui.keyUp("ctrl")
+                            time.sleep(1)
+                            break
+
+                    pyautogui.click(272, 705)
+                    time.sleep(1)
+                    pyautogui.hotkey("a")  # 对颌
+                    print(1111111111111111)
+                    time.sleep(1)
+                    pyautogui.hotkey("s")  # 工作模型扫描
+                    print(2222222222222222)
+                    time.sleep(2)
+                    pyautogui.hotkey("m")
+                    print(3333333333333333)
+                    time.sleep(2)
+
                 else:
+                    # 单冠
                     time.sleep(1)
                     pyautogui.click(1535, 855)
                     time.sleep(1)
@@ -175,7 +209,7 @@ def main():
 
                     time.sleep(2)
                     print(555555555555555555555)
-                    pyautogui.click(x=2500,y=1363,clicks=1,button='left')
+                    pyautogui.click(x=2500,y=1363,clicks=1,button='left') #模型显示到正中心
                     time.sleep(2)
 
                     #   下颌牙冠
@@ -192,7 +226,7 @@ def main():
 
                     # 获取牙冠并保存
                     result = identify_exist_crown(pngnamelow)            # 判断是黄色还是灰色，看牙颌中是否存在冠
-                    boxes = detector.process(lowtoothmesh_path)
+                    boxes = detector.process(lowtoothmesh_path)          #读取图片
                     print(boxes)
                     if result == True and len(boxes)>0:
                         print("下颌box",boxes)
