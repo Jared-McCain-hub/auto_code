@@ -748,6 +748,24 @@ def detect_in_region_and_exit():
     return True
 
 
+def detect_anatomical_morphology():
+    keyword = "解剖形态"
+    hide_region = (18, 15, 280 - 18, 284 - 15)
+    hide_x, hide_y, hide_w, hide_h = hide_region
+    hide_img = np.array(pyautogui.screenshot(region=hide_region))
+    results = reader.readtext(hide_img)
+    print("OCR result:", results)
+    for bbox, text, _ in results:
+        if '解剖形态' in text:
+            xs = [pt[0] for pt in bbox]
+            ys = [pt[1] for pt in bbox]
+            cx = int(sum(xs)/4) + hide_x
+            cy = int(sum(ys)/4) + hide_y
+            return True
+
+
+
+
 def detect_bridge_type():
     X0_BRIDGE, Y0_BRIDGE = 18, 15
     W_BRIDGE, H_BRIDGE = 280 - X0_BRIDGE, 284 - Y0_BRIDGE
