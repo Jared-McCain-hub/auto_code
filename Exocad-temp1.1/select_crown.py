@@ -120,10 +120,10 @@ def main():
 
             if not detect_in_region_and_exit():
                 print("退出操作，填入到throw.txt中")
-                with open(file_false_path, 'r', encoding='utf-8') as fi:
-                    existing_contents_false = fi.read().splitlines()
-                if file not in existing_contents_false:
-                    with open(file_false_path, 'a') as fi:
+                with open(file_throw_path, 'r', encoding='utf-8') as fi:
+                    existing_contents_throw = fi.read().splitlines()
+                if file not in existing_contents_throw:
+                    with open(file_throw_path, 'a') as fi:
                         fi.write(file + '\n')
                 
 
